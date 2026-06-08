@@ -1,0 +1,17 @@
+name: SnowflakeCannon
+version: 1.0.0
+main: dev.proflare.snowflakecannon.SnowflakeCannon
+api-version: 1.21
+description: Orbital strike cannon in a snowflake pattern.
+authors: [ProFlare]
+
+commands:
+  give-snowflake:
+    description: Give a snowflake cannon rod.
+    usage: /give-snowflake [player]
+    permission: snowflakecannon.give
+
+permissions:
+  snowflakecannon.give:
+    description: Allows giving the snowflake rod.
+    default: op
