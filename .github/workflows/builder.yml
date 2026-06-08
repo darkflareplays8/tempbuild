@@ -1,0 +1,68 @@
+name: Build Plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find ZIP file
+        id: zip
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No ZIP file found!"
+            exit 1
+          fi
+
+          echo "zip_file=$ZIP_FILE" >> $GITHUB_OUTPUT
+
+      - name: Extract ZIP
+        run: |
+          mkdir extracted
+          unzip -q "${{ steps.zip.outputs.zip_file }}" -d extracted
+
+      - name: Locate Maven project
+        id: project
+        run: |
+          PROJECT_DIR=$(find extracted -name pom.xml -exec dirname {} \; | head -n 1)
+
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "No pom.xml found!"
+            exit 1
+          fi
+
+          echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build JAR
+        working-directory: ${{ steps.project.outputs.project_dir }}
+        run: mvn -B clean package
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snowflake-cannon
+          path: |
+            ${{ steps.project.outputs.project_dir }}/target/*.jar
+          if-no-files-found: error
